@@ -1,7 +1,5 @@
 ﻿using Ninject;
 using System;
-using System.Net.Http;
-using System.ServiceModel.Channels;
 using System.Web;
 using System.Web.Http;
 using WebCalculator.Interfaces;
@@ -16,10 +14,27 @@ namespace WebCalculator.Controllers
 		[Inject]
 		public IRepository Repository { get; set; }
 
+		private string GetIPAddress()
+		{
+			HttpContext context = HttpContext.Current;
+			string ipAddress = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+
+			if (!string.IsNullOrEmpty(ipAddress))
+			{
+				string[] addresses = ipAddress.Split(',');
+				if (addresses.Length != 0)
+				{
+					return addresses[0];
+				}
+			}
+
+			return context.Request.ServerVariables["REMOTE_ADDR"];
+		}
+
 		[HttpGet]
 		public int Sum(int first, int second)
 		{
-			string address = GetClientIp(Request);
+			string address = GetIPAddress();
 			int result = result = Math.Sum(first, second);
 			User user = Repository.GetUserByAddress(address);
 			Models.Database.Action action = Repository.GetActionByName("Sum");
@@ -39,7 +54,7 @@ namespace WebCalculator.Controllers
 		[HttpGet]
 		public int Substract(int first, int second)
 		{
-			string address = GetClientIp(Request);
+			string address = GetIPAddress();
 			int result = result = Math.Substract(first, second);
 			User user = Repository.GetUserByAddress(address);
 			Models.Database.Action action = Repository.GetActionByName("Substract");
@@ -59,7 +74,7 @@ namespace WebCalculator.Controllers
 		[HttpGet]
 		public int Multiply(int first, int second)
 		{
-			string address = GetClientIp(Request);
+			string address = GetIPAddress();
 			int result = result = Math.Multiply(first, second);
 			User user = Repository.GetUserByAddress(address);
 			Models.Database.Action action = Repository.GetActionByName("Multiply");
@@ -79,7 +94,7 @@ namespace WebCalculator.Controllers
 		[HttpGet]
 		public int Divide(int first, int second)
 		{
-			string address = GetClientIp(Request);
+			string address = GetIPAddress();
 			int result = result = Math.Divide(first, second);
 			User user = Repository.GetUserByAddress(address);
 			Models.Database.Action action = Repository.GetActionByName("Divide");
@@ -104,6 +119,7 @@ namespace WebCalculator.Controllers
 			Repository.AddUserAction(new UserAction()
 			{
 				User = user,
+				//Фиксация времени активации метода можно сделать с помощью триггера
 				Time = DateTime.Now,
 				First_Operand = first,
 				Second_Operand = second,
@@ -111,29 +127,5 @@ namespace WebCalculator.Controllers
 				Action = action
 			});
 		}
-
-		private string GetClientIp(HttpRequestMessage request = null)
-		{
-			request = request ?? Request;
-
-			if (request.Properties.ContainsKey("MS_HttpContext"))
-			{
-				return ((HttpContextWrapper)request.Properties["MS_HttpContext"]).Request.UserHostAddress;
-			}
-			else if (request.Properties.ContainsKey(RemoteEndpointMessageProperty.Name))
-			{
-				RemoteEndpointMessageProperty prop = (RemoteEndpointMessageProperty)Request.Properties[RemoteEndpointMessageProperty.Name];
-				return prop.Address;
-			}
-			else if (HttpContext.Current != null)
-			{
-				return HttpContext.Current.Request.UserHostAddress;
-			}
-			else
-			{
-				return null;
-			}
-		}
-
 	}
 }
