@@ -1,0 +1,45 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Caculator Client</title>
+	<script src="../Scripts/jquery-3.1.1.js"></script>
+	<script>
+        $(document).ready(function () {
+			$(":button").click(function (event) {
+				var value1 = $("#First").val();
+                var value2 = $("#Second").val();
+                var arg = "first=" + value1 + "&second=" + value2;
+				var id = $("#operation").children(":selected").attr("id");
+				var urlString = "/api/math/" + id + arg;
+				$.ajax({
+					url: urlString,
+					type: "GET",
+					dataType: 'json',
+					success: function (result) {
+						$("#Result").val(result);
+					},
+					error: function (xhr, status, error) {
+						var err = eval("(" + xhr.responseText + ")");
+						$("#Result").val(err.Message)
+					}
+				});
+            });
+        });
+	</script>
+</head>
+<body>
+	<div style="text-align:center">
+		Please enter First Value:   <input type="number" id="First" min="1" max="100"><br><br>
+		Please enter Operation:
+		<select id="operation">
+			<option id="Sum/?">+</option>
+			<option id="Substract/?">-</option>
+			<option id="Multiply/?">*</option>
+			<option id="Divide/?">/</option>
+		</select><br><br>
+		Please enter Second Value :   <input type="number" id="Second" min="1" max="100"><br><br>
+		Result from Math API Service : <input type="tel" id="Result" disabled /><br><br>
+		<input type="button" value="Execute" />
+	</div>
+</body>
+</html>
